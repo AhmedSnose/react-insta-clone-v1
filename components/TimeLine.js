@@ -1,7 +1,7 @@
 import Post from "./Post"
 import {db} from '../utils/firebase'
 import {useSession} from 'next-auth/client'
-import { onSnapshot,collection, orderBy, query } from "@firebase/firestore";
+import { onSnapshot,collection, orderBy, query, doc, getDoc, getDocs } from "@firebase/firestore";
 
 
 
@@ -9,9 +9,6 @@ import { useState , useEffect } from "react"
 function TimeLine(props) {
     const [Posts, setPosts] = useState([])
     const [session , loging] = useSession()
-
-    const username = session.user.name
-    const url = session.user.image
 
     useEffect(
         ()=> onSnapshot(

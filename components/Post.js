@@ -7,10 +7,10 @@ import TurnedInNotOutlinedIcon from '@material-ui/icons/TurnedInNotOutlined';
 import SentimentSatisfiedOutlinedIcon from '@material-ui/icons/SentimentSatisfiedOutlined';
 import Comments from './Comments';
 import { useEffect, useState } from 'react';
-import { addDoc, collection , deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, setDoc } from '@firebase/firestore';
+import { addDoc, collection , deleteDoc, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, setDoc } from '@firebase/firestore';
 import { db } from '../utils/firebase';
 import {useSession} from 'next-auth/client'
-
+import { useRouter } from 'next/router';
 import {idState} from '../atomos/modolAtom'
 import {useRecoilState} from 'recoil';
 
@@ -23,10 +23,9 @@ function Post({id, postUrl ,caption , avaUrl , userName , place , timeStamp}) {
     const [likes , setLikes] = useState([])
     const [hasLiked , setHasLiked] = useState(false)
     const [openPost , setOpenPost] = useRecoilState(idState)
-
+    const router = useRouter()        
 
     useEffect(_=>setOpenPost(id),[])
-
 
     useEffect(
         ()=> onSnapshot(
@@ -88,6 +87,32 @@ function Post({id, postUrl ,caption , avaUrl , userName , place , timeStamp}) {
         })
      }
     }
+    // Chat 
+
+    const Chat = async ()=>{
+
+const docRef = doc(db, "Posts", id);
+const docSnap = await getDoc(docRef);
+const emailOfSender = docSnap.data().email
+const profileIMG = docSnap.data().profileIMG
+
+
+if (docSnap.exists()) {
+    router.push({
+        pathname:'/chat',
+        query:{
+            email:emailOfSender,
+            receverImg:profileIMG,
+        }
+    })
+  } else {
+    console.log("No such document!");
+  }
+
+
+
+
+    }
     return (
 
         <div className='POST_CONT flex flex-col m-2 shadow-lg bg-white '>
@@ -128,7 +153,7 @@ function Post({id, postUrl ,caption , avaUrl , userName , place , timeStamp}) {
                         <FavoriteBorderOutlinedIcon onClick={addlike} className='cursor-pointer mx-3 mt-3' />
                     )}
 
-                    <ChatBubbleOutlineOutlinedIcon className=' mx-3 mt-3'/>
+                    <ChatBubbleOutlineOutlinedIcon onClick={Chat} className=' cursor-pointer mx-3 mt-3'/>
                     <SendOutlinedIcon className=' mx-3 mt-3'/>
                     <TurnedInNotOutlinedIcon className='mx-3 mt-3 ml-auto' />
                 </ul>

@@ -35,7 +35,7 @@ function index() {
       })
     },[])
   
-
+console.log(loddingSession,"loddingSession.user.email");
 
 
     useEffect(

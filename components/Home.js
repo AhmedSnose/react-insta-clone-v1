@@ -34,7 +34,6 @@ export default function Home(props) {
 //     return <p className='text-5xl text-center'>make combonnent with insta logo</p>
 //   }
 //   console.log(loddingSession.user, "loddingSession");
-
   return (
     
     <div>

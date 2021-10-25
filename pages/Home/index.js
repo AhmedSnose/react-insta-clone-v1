@@ -2,6 +2,7 @@ import Home from '../../components/Home'
 import {getSession} from 'next-auth/client'
 
 function index(props) {
+  console.log(props);
   return (
     <Home props={props}/>
   )
@@ -17,7 +18,7 @@ export async function getServerSideProps(context){
  // if the user is auth , {session} will be a vaild user obj
 
   // -----------------------
-  const res = await fetch('https://post-api-25a47-default-rtdb.firebaseio.com/0.json')
+  const res = await fetch('https://instagram-1f20d-default-rtdb.firebaseio.com/0.json')
   const data = await res.json()
   // --------------------------
 
