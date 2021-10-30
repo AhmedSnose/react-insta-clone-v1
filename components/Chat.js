@@ -1,55 +1,58 @@
-import Nav from "./Nav"
+// import Nav from "./Nav"
 import { useEffect , useState , useRef} from 'react'
 import { useRouter } from 'next/router';
-import { getSession, session} from 'next-auth/client'
-import {useSession } from 'next-auth/client'
+// import { getSession, session} from 'next-auth/client'
+// import {useSession } from 'next-auth/client'
 import { db } from "../utils/firebase";
-import { addDoc, collection, doc, getDoc, getDocs, onSnapshot, orderBy, query, serverTimestamp, setDoc } from "@firebase/firestore";
+import { addDoc, collection, doc, getDoc, getDocs, onSnapshot, orderBy, query, serverTimestamp, setDoc, where } from "@firebase/firestore";
 import UserChat from "./UserChat";
 
-import SenderMessage from "./SenderMessage";
-import ReceiverMessage from "./ReceiverMessage";
+import AllMes from "./AllMes";
 
 
-function index() {
+function index({session}) {
   const [loding , isLoding] = useState(true)
   const [loddingSession , setisLoddingSession] = useState()
   const router = useRouter()
   const {email , receverImg} = router.query
-  const [session , loging] = useSession()
+  // const [session , loging] = useSession()
   const messageRef = useRef()
   const [MSender , setMSender] = useState([])
   const [MSreceiver , setMSreceiver] = useState([])
+  const [All , setAll] = useState([])
 
+  // const [TextMessages , setTextMessages]=useState([])
 
-  // useEffect(
-  //   async ()=> {
-  //    const refw = collection(db,'Users',session.user.email,'messages')
-
-  //    const querySnapshotw = await getDocs(refw);
-
-  //   const data2 = querySnapshotw.forEach((doc) => {
-  //    console.log(doc.id, " => ", doc.data());
-     
-  //  });
-  //     }
-     
-  //    ,[db])
-
+  
 
 
      useEffect(
-      ()=> onSnapshot(
-          query(collection(db , 'Users', session.user.email,'messages'),orderBy("timeStamp")) , 
+      ()=> 
+        
+        onSnapshot(
+        // query(collection(db , 'Users', session.user.email,'messages'), where("email", "==", email)) ,         
+          query(collection(db , 'Users','messges',session.user.email), where("email", "==", email)) , 
            (snapshot) =>{
-              const data = snapshot.docs.map(e=>e.data())
-              const filterd = data.filter(com => com.email === email)
-                setMSreceiver(filterd)
-                console.log(filterd,'data revev')
-  
+            const data = snapshot.docs.map(e=>e.data())
+              // const filterd = data.filter(com => com.email === email)
+                setMSreceiver(data)
               }
-          ) ,[db])
+          )
+        
+         ,[db])
   
+
+         // get all messages
+         useEffect(
+          ()=> onSnapshot(
+              query(collection(db, "Users")) , 
+              (snapshot) =>{
+                setAll(snapshot.docs)
+                console.log(snapshot.docs);
+              }) 
+              ,[db])
+
+
 
 
   // useEffect(async ()=>{
@@ -68,33 +71,30 @@ function index() {
 
 
 
-  //true
 
   useEffect(
-    ()=> onSnapshot(
-        query(collection(db , 'Users', email,'messages'),orderBy("timeStamp")) , 
+    ()=> {onSnapshot(
+        // query(collection(db , 'Users', email,'messages'),orderBy("timeStamp")) , 
+        query(collection(db , 'Users','messges',email), where("email", "==", session.user.email)) , 
          (snapshot) =>{
             const data = snapshot.docs.map(e=>e.data())
-            const filterd = data.filter(com => com.email === session.user.email)
-              setMSender(filterd)
-              console.log(filterd,'data fillterd')
+              setMSender(data)
 
             }
-        ) ,[db])
+        ) 
+
+      },[db])
 
 
 
 
   const SendMessage = async (e)=>{
+    console.log(All);
 
     const message = messageRef.current.value;
     e.preventDefault()
-    // console.log(message);
-    //send
-    // await addDoc(collection(db , 'Users',email,'messages','message',session.user.email), 
-
-    await addDoc(collection(db , 'Users',email,'messages'), 
-      {email:session.user.email,photoUrl:session.user.image,timeStamp:serverTimestamp(),message:message}
+    await addDoc(collection(db , 'Users','messges',email), 
+    {email:session.user.email,photoUrl:session.user.image,timeStamp:serverTimestamp(),message:message}
     ); 
 
   }
@@ -103,15 +103,17 @@ function index() {
     return <p className='text-5xl text-center'>make combonnent with insta logo</p>
   }
 
+
     return (
         <>
-  <Nav />
+  {/* <Nav /> */}
     
   <div className='chat'>
    <div className='chat-inner'>
 
     <div className="preview">
       <div id="user-name">Chat <i className='fas fa-angle-down'></i></div>
+
       <UserChat  img={receverImg} email={email} message='OnSnapShot' />
       {/* <UserChat  img={receverImg} email={email} message='OnSnapShot' />
       <UserChat  img={receverImg} email={email} message='OnSnapShot' />
@@ -134,13 +136,7 @@ function index() {
         <div><i className='fas fa-info'></i></div>
       </div>
 
-        {MSender.map((mes,id)=>(
-        <SenderMessage key={id} messageSender={mes.message}/>
-        ))}
-
-       {MSreceiver.map((mes,id)=>(
-         <ReceiverMessage key={id} messageReceiver={mes.message} />
-        ))}
+       <AllMes MSender={MSender} MSreceiver={MSreceiver}/>
         
 
       <div className="user-input"></div>

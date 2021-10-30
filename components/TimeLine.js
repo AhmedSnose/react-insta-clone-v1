@@ -41,18 +41,3 @@ function TimeLine(props) {
 
 export default TimeLine
 
-// [{
-//     avaUrl:'https://images.unsplash.com/photo-1630706657925-15cc52c542ab?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=387&q=80',
-//     caption:'Hola From DB 💔',
-//     place:'Egpty',
-//     postUrl:'https://images.unsplash.com/photo-1471897488648-5eae4ac6686b?ixid=MnwxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=387&q=80',
-//     timeStamp:'11111111',
-//     userName:'MrError'
-// } , {
-//     avaUrl:'https://images.unsplash.com/photo-1630706657925-15cc52c542ab?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=387&q=80',
-//     caption:'Hola From DB 💔',
-//     place:'Egpty',
-//     postUrl:'https://images.unsplash.com/photo-1471897488648-5eae4ac6686b?ixid=MnwxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=387&q=80',
-//     timeStamp:'11111111',
-//     userName:'MrError'
-// }]
