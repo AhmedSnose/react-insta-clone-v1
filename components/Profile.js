@@ -1,146 +1,142 @@
-import SettingsIcon from '@material-ui/icons/Settings';
-import Nav from './Nav';
-import { useEffect , useState} from 'react'
-import { getSession, session} from 'next-auth/client'
-import { useRouter } from 'next/router';
-import { db } from '../utils/firebase';
-import { collection, onSnapshot, orderBy, query } from '@firebase/firestore';
-import { async } from '@firebase/util';
-import {idState , modolState} from '../atomos/modolAtom'
-import {useRecoilState} from 'recoil';
-import Gallery from './Gallery';
-import Modol from './Modol';
+import { useEffect, useState } from "react";
+import { getSession } from "next-auth/client";
+import { useRouter } from "next/router";
+import { db } from "../utils/firebase";
+import { collection, onSnapshot, orderBy, query } from "@firebase/firestore";
+import { useRecoilState } from "recoil";
+import { modolState } from "../atomos/modolAtom";
+import Gallery from "./Gallery";
+import Modol from "./Modol";
 
+function ProfilePage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState(null);
+  const [posts, setPosts] = useState([]);
+  const [openPost, setOpenPost] = useRecoilState(modolState);
 
+  useEffect(() => {
+    getSession().then((session) => {
+      setSession(session);
+      if (!session) {
+        router.replace("/");
+      } else {
+        setLoading(false);
+      }
+    });
+  }, []);
 
-function index() {
-
-  
-    const router = useRouter()
-    const [loding , isLoding] = useState(true)
-    const [loddingSession , setisLoddingSession] = useState()
-    const [posts , setPosts]=useState([])
-    const [openPost , setOpenPost] = useRecoilState(modolState)
-
-    // const [postId , setPostID]=useRecoilState(idState)
-    // const [comments , setComments]=useState()
-    useEffect(async ()=>{
-      getSession().then(session => {
-        setisLoddingSession(session)
-
-        if(!session){
-            router.replace('/')
-        } else isLoding(false)
-  
-      })
-    },[])
-  
-console.log(loddingSession,"loddingSession.user.email");
-
-
-    useEffect(
-        ()=> onSnapshot(
-            query(collection(db,'Posts') , orderBy("timeStamp","desc")) , 
-            (snapshot) =>{
-                const data = snapshot.docs.map((dat)=>{
-                    return dat.data()
-                })
-                const filterd = data.filter((data)=> data.email === loddingSession.user.email)
-                setPosts(filterd)   
-
-                // console.log(filterd);
-            }) 
-
-        , [db,loddingSession])
-
-        // useEffect(
-        //     ()=> onSnapshot(
-        //         query(collection(db,'Posts',postId,'comments')) , 
-        //         (snapshot) =>{
-        //             setComments(snapshot.docs)
-        //             const data = snapshot.docs.map((dat)=>{
-        //                 return dat.data()
-        //             })
-                    
-        //             // const filterd = data.filter((data)=> data.profileIMG === loddingSession.user.image)
-        //             console.log(data);
-        //         }) 
-    
-        //     ,[db, postId])
-
-            // console.log(postId ,"postIdpostId");
-
-console.log(openPost);
-    if(loding){ 
-      return <div className="loader"></div>
-
+  useEffect(() => {
+    if (session) {
+      const q = query(collection(db, "Posts"), orderBy("timeStamp", "desc"));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const data = snapshot.docs.map((doc) => doc.data());
+        const filtered = data.filter(
+          (post) => post.email === session.user.email
+        );
+        setPosts(filtered);
+      });
+      return () => unsubscribe();
     }
-// console.log(posts);
-    return (
-        <>
-{/* if you want used <Nav /> use await */}
-<header>
+  }, [session]);
 
-<div className="container">
+  if (loading) {
+    return <div className="loader"></div>;
+  }
+  return (
+    <>
+      <main className="bg-gray-100 bg-opacity-25">
+        <div className="mb-8">
+          <header className="flex flex-wrap items-center p-4 md:py-8">
+            <div className="md:w-3/12">
+              <img
+                className="w-40 object-cover rounded-full border-2 border-pink-600 p-1"
+                src={session?.user?.image?.imgUrl}
+                alt="profile"
+              />
+            </div>
 
-    <div className="profile">
+            <div className="w-8/12 md:w-7/12 ml-4">
+              <div className="md:flex md:flex-wrap md:items-center mb-4">
+                <h2 className="text-2xl font-semibold inline-block first-letter:uppercase md:mr-2 mb-2 sm:mb-0">
+                  {session?.user?.name}
+                </h2>
 
-        <div className="profile-image">
+                <a
+                  href="#"
+                  className="bg-blue-500 px-2 py-1 text-white font-semibold text-sm rounded block text-center sm:inline-block"
+                >
+                  Follow
+                </a>
+              </div>
 
-            <img className='object-contain' src={loddingSession.user.image} alt="" />
+              <ul className="hidden md:flex space-x-8 mb-4">
+                <li>
+                  <span className="font-semibold">{posts.length}</span> posts
+                </li>
+                <li>
+                  <span className="font-semibold">188</span> followers
+                </li>
+                <li>
+                  <span className="font-semibold">206</span> following
+                </li>
+              </ul>
 
-        </div>
+              <div className="hidden md:block">
+                <h1 className="font-semibold">{session?.user?.name}</h1>
+                <span>Travel, Nature, and Music</span>
+                <p>Lorem ipsum dolor sit amet consectetur</p>
+              </div>
+            </div>
 
-        <div className="profile-user-settings">
+            <div className="md:hidden text-sm my-2">
+              <h1 className="font-semibold">{session?.user?.name}</h1>
+              <span>Travel, Nature, and Music</span>
+              <p>Lorem ipsum dolor sit amet consectetur</p>
+            </div>
+          </header>
 
-            <h1 className="profile-user-name">{loddingSession.user.name}</h1>
-
-            <button onClick={()=>router.replace('/setting/changePic')} className="btn profile-edit-btn active:opacity-5 outline-none">Edit Profile</button>
-
-            <button className="btn profile-settings-btn" aria-label="profile settings"><SettingsIcon /></button>
-
-        </div>
-
-        <div className="profile-stats">
-
-            <ul>
-                <li><span className="profile-stat-count">164</span> posts</li>
-                <li><span className="profile-stat-count">188</span> followers</li>
-                <li><span className="profile-stat-count">206</span> following</li>
+          <div className="px-px md:px-3">
+            <ul className="flex items-center justify-around md:justify-center space-x-12 uppercase tracking-widest font-semibold text-xs text-gray-600 border-t">
+              <li className="md:border-t md:border-gray-700 md:-mt-px md:text-gray-700">
+                <a className="inline-block p-3" href="#">
+                  <i className="fas fa-th-large text-xl md:text-xs"></i>
+                  <span className="hidden md:inline">Posts</span>
+                </a>
+              </li>
             </ul>
 
+            <div className="flex flex-wrap -mx-px md:-mx-3">
+              {posts.map((post) => (
+                <div
+                  key={post.id}
+                  className="p-px md:px-3 group relative cursor-pointer my-2"
+                >
+                  <img
+                    src={post.postUrl}
+                    alt="Post"
+                    className="w-full h-full object-cover"
+                  />
+
+                  {/* Overlay on hover */}
+                  <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity duration-300">
+                    <div className="text-center">
+                      {/* Likes and caption on hover */}
+                      <p className="text-lg mb-1">
+                        <i className="fas fa-heart"></i> {post.likes} Likes
+                      </p>
+                      <p className="text-sm">{post.caption}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-
-        <div className="profile-bio">
-
-            <p><span className="profile-real-name">{loddingSession.user.name}</span> Lorem ipsum dolor sit, amet consectetur adipisicing elit 📷✈️🏕️</p>
-
-        </div>
-
-    </div>
-
-</div>
-
-</header>
-
-<main>
-{posts=='' && <p className='my-5 text-center font-bold text-gray-600'>you don't have any Post yet !! <span className='cursor-pointer text-red-600 ' onClick={()=>setOpenPost(true)}>Create One</span> </p>}     
-
-    <div className="container"> 
-    
-    {posts.map(p=>(
-        <Gallery key={p.likes} postUrl={p.postUrl} caption={p.caption}/>
-      ))}
-
-
-
-</div>
-
-</main>
-<Modol />
-
-</>
-    )
+      </main>
+      <Modol />
+    </>
+  );
 }
 
-export default index
+export default ProfilePage;

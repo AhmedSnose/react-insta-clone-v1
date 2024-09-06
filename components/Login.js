@@ -1,182 +1,175 @@
 import FacebookIcon from '@material-ui/icons/Facebook';
-import useInput from '../hooks/use-input'
-import { useState ,useEffect } from 'react';
-// import { auth , db} from '../utils/firebase';
-import { signIn} from 'next-auth/client';
+import useInput from '../hooks/use-input';
+import { useState } from 'react';
+import { signIn } from 'next-auth/client';
 import { useRouter } from 'next/router';
-import {useSession} from 'next-auth/client'
-import ChosePic from './ChosePic';
 
-// https://www.instagram.com/static/images/web/mobile_nav_type_logo.png/735145cfe0a4.png
-
-const imgUrl = 'https://www.seekpng.com/png/detail/966-9665493_my-profile-icon-blank-profile-image-circle.png'
 const isEmail = (value) => value.includes('@');
-const isPass =  (value) => value.length > 8
+const isPass = (value) => value.length > 8;
 const isNotEmpty = (value) => value.trim() !== '';
 
- async function CreateUser(dataUser){
-  const result = await fetch('/api/auth/sginUp',{
-      method:"POST",
-      body: JSON.stringify(dataUser),
-      headers:{
-        'Content-Type': 'application/json',
+async function CreateUser(dataUser) {
+  const result = await fetch('/api/auth/sginUp', {
+    method: "POST",
+    body: JSON.stringify(dataUser),
+    headers: {
+      'Content-Type': 'application/json',
+    }
+  });
+
+  const data = await result.json();
+  if (!result.ok) {
+    throw new Error(data.message || 'Something went wrong');
+  }
+  return data;
+}
+
+function Login() {
+  const [isLogIn, setIsLogInn] = useState(false);
+  const [disButton, setDisButton] = useState(false);
+  const router = useRouter();
+
+  const {
+    value: UserNameValue,
+    isValid: UserNameIsValid,
+    hasError: UserNameHasError,
+    valueChangeHandler: UserNameChangeHandler,
+    inputBlurHandler: UserNameBlurHandler,
+    reset: resetUserName,
+  } = useInput(isNotEmpty);
+
+  const {
+    value: emailValue,
+    isValid: emailIsValid,
+    hasError: emailHasError,
+    valueChangeHandler: emailChangeHandler,
+    inputBlurHandler: emailBlurHandler,
+    reset: resetEmail,
+  } = useInput(isEmail);
+
+  const {
+    value: passwordValue,
+    isValid: passwordIsValid,
+    hasError: passwordHasError,
+    valueChangeHandler: passwordChangeHandler,
+    inputBlurHandler: passwordBlurHandler,
+    reset: resetPass,
+  } = useInput(isPass);
+
+  let formIsValid = false;
+  if (emailIsValid && passwordIsValid) {
+    formIsValid = true;
+  }
+
+  const submitHandler = async (event) => {
+    event.preventDefault();
+    if (!formIsValid) {
+      return;
+    }
+
+    const userFormData = { emailValue, passwordValue, UserNameValue: UserNameIsValid ? UserNameValue : null };
+
+    if (isLogIn && UserNameIsValid) {
+      try {
+        setDisButton(true);
+        const result = await CreateUser(userFormData);
+        resetUserName();
+        resetEmail();
+        resetPass();
+        setIsLogInn(prev => !prev);
+        setDisButton(false);
+      } catch (error) {
+        console.log(error);
       }
-    })
+    } else {
+      setDisButton(true);
+      const result = await signIn("credentials", {
+        redirect: false,
+        email: emailValue,
+        password: passwordValue,
+      });
 
-   const data = await result.json()  
-   if(!result.ok){
-     throw new Error(data.message || 'SomeThing Went Wrong')
-   }
-   return data;
-
-}
-
-function Login(props) {
-    const [isLogIn , setIsLogInn] = useState(false)
-    const [disButton , setDisButton] = useState(false)
-    const router = useRouter();
-
-
-    
-
-    const LoginHandler = ()=>{
-        setIsLogInn(prev => !prev)
+      if (!result.error) {
+        router.replace('/Home');
+      } else {
+        setDisButton(false);
+        alert(result.error);
+      }
     }
+  }
 
-    const {
-        value: UserNameValue,
-        isValid: UserNameIsValid,
-        hasError: UserNameHasError,
-        valueChangeHandler: UserNameChangeHandler,
-        inputBlurHandler: UserNameBlurHandler,
-        reset: resetUserName,
-      } = useInput(isNotEmpty);
+  return (
+    <div className="h-screen bg-gray-50 flex flex-col justify-center items-center">
+      <div className="bg-white border border-gray-300 w-80 py-8 flex items-center flex-col mb-3">
+        <h1 className="bg-no-repeat instagram-logo"></h1>
+        <form className="mt-8 w-64 flex flex-col" onSubmit={submitHandler}>
+          {isLogIn && (
+            <input
+              className={`text-xs w-full mb-2 rounded border bg-gray-100 border-gray-300 px-2 py-2 focus:outline-none focus:border-gray-400 active:outline-none ${UserNameHasError ? 'border-red-500' : ''}`}
+              id="username"
+              value={UserNameValue}
+              onChange={UserNameChangeHandler}
+              onBlur={UserNameBlurHandler}
+              placeholder="User Name"
+            />
+          )}
+          {UserNameHasError && <p className="text-red-500 text-xs mb-2">Please enter a valid User Name.</p>}
 
-    const {
-        value: emailValue,
-        isValid: emailIsValid,
-        hasError: emailHasError,
-        valueChangeHandler: emailChangeHandler,
-        inputBlurHandler: emailBlurHandler,
-        reset: resetEmail,
-      } = useInput(isEmail);
+          <input
+            type="email"
+            className={`text-xs w-full mb-2 rounded border bg-gray-100 border-gray-300 px-2 py-2 focus:outline-none focus:border-gray-400 active:outline-none ${emailHasError ? 'border-red-500' : ''}`}
+            id="email"
+            value={emailValue}
+            onChange={emailChangeHandler}
+            onBlur={emailBlurHandler}
+            placeholder={`${isLogIn ? 'Email' : 'Phone number, username, or email'}`}
+          />
+          {emailHasError && <p className="text-red-500 text-xs mb-2">Please enter a valid email.</p>}
 
-      const {
-        value: passwordValue,
-        isValid: passwordIsValid,
-        hasError: passwordHasError,
-        valueChangeHandler: passwordChangeHandler,
-        inputBlurHandler: passwordBlurHandler,
-        reset: resetPass,
-      } = useInput(isPass);
+          <input
+            className={`text-xs w-full mb-4 rounded border bg-gray-100 border-gray-300 px-2 py-2 focus:outline-none focus:border-gray-400 active:outline-none ${passwordHasError ? 'border-red-500' : ''}`}
+            id="password"
+            value={passwordValue}
+            onChange={passwordChangeHandler}
+            onBlur={passwordBlurHandler}
+            type="password"
+            placeholder="Password"
+          />
+          {passwordHasError && <p className="text-red-500 text-xs mb-4">Password must be at least 8 characters long.</p>}
 
-    
-
-    let formIsValid = false;
-    if (emailIsValid && passwordIsValid) {
-      formIsValid = true;
-    }
-
-    const submitHandler = async event => {
-        event.preventDefault();
-        if (!formIsValid) {
-          return;
-        }
-
-
-        const userFormData = {emailValue ,passwordValue , UserNameValue:UserNameIsValid?UserNameValue:null , imgUrl}
-
-        //signIN
-        if(isLogIn && UserNameIsValid){
-          try {
-            setDisButton(true)
-
-            const result = await CreateUser(userFormData)
-            console.log(result.suc , "signIN res");
-            resetUserName()
-            resetEmail()
-            resetPass()
-            setIsLogInn(prev => !prev)
-            setDisButton(false)
-
-           } catch(error) {console.log(error)}
-
-           //-------------------------------------
-          // LogIN
-        } else{
-            console.log("Loging");
-            setDisButton(true)
-            const result = await signIn("credentials" ,
-            {
-              redirect: false,
-              email:emailValue,
-              password:passwordValue,
-            })
-
-            // Login Error / Pass Handeling
-            if (!result.error) router.replace('/Home');
-            else setDisButton(false) , alert(result.error);
-
-        }
-    }
-
-    return (
-    <form className='flex flex-col h-screen items-center bg-gray-300'
-       onSubmit={submitHandler}>
-
-           <div className='shadow-lg text-center p-5 bg-gray-100 overflow-hidden w-[350px] h-[450px] mt-7'>
-
-               <div className='flex justify-around align-middle flex-col transform translate-x[-250px]'>
-                   <h2 className='text-5xl py-3 m-3 font-mono '>instagram</h2>
-                   <button className=' w-100 bg-blue-500 py-1 text-white text-r  font-bold text-sm m-2 active:opacity-50'><FacebookIcon className='mr-2' /> Log With Facebock</button>
-                   <hr  />
-
-                  {isLogIn && <input 
-
-                    className={`outline-none py-1 m-3 border-solid border-2 ${UserNameHasError ? 'border-red-500' : 'border-0' }`}
-                    id='name'
-                    value={UserNameValue}
-                    onChange={UserNameChangeHandler}
-                    onBlur={UserNameBlurHandler}
-                    placeholder='   User Name' /> }
-
-                   <input
-                    type='email'
-                    required 
-                    className={`outline-none py-1 m-3 border-solid border-2 ${emailHasError ? 'border-red-500' : 'border-0' }`}
-                    id='name'
-                    value={emailValue}
-                    onChange={emailChangeHandler}
-                    onBlur={emailBlurHandler}
-                    placeholder={`${isLogIn ? '   Email' :'   User name or Email'}`} />
-
-                   <input
-                    className={`outline-none py-1 m-3 border-solid border-2 ${passwordHasError ? 'border-red-500' : 'border-0' }`}
-                    id='name'
-                    value={passwordValue}
-                    onChange={passwordChangeHandler}
-                    onBlur={passwordBlurHandler}
-                    type="password"
-                    placeholder='   Password' />
-
-                  
-                   <button disabled={disButton} onClick={submitHandler} className={`w-100 bg-gray-900 py-1 m-3 text-gray-400 ${disButton ? 'opacity-[.5]' : '' }`}>{isLogIn ? 'Next' :'Log in'}</button>
-                   <p className='py-1 m-3 text-opacity-10 text-xs'>By signing up, you agree to our Terms , Data Policy and Cookies Policy </p>
-               </div>
-
-            </div>
-
-            
-            <div className='shadow-lg text-center p-5 bg-gray-100 w-[350px] h-[130px] mt-3'>
-                Have an account?<button onClick={LoginHandler} className='cursor-pointer w-100 py-1 m-2 text-gray-400'>{isLogIn ? 'Log in' : 'Sgin in'}</button>
-                {emailHasError && <p className=" m-0 text-red-500">Please enter a valid User Name</p>}
-                {passwordHasError && <p className=" m-0 text-red-500">Please enter a valid Password 8 CH</p>}
-                {UserNameHasError && <p className=" m-0 text-red-500">Please enter a valid Password 8 CH</p>}
-
-
+          <button
+            disabled={disButton}
+            className={`text-sm text-center bg-blue-500 text-white py-1 rounded font-medium ${disButton ? 'opacity-50' : ''}`}
+          >
+            {isLogIn ? 'Sign Up' : 'Log In'}
+          </button>
+        </form>
+        <div className="flex justify-evenly space-x-2 w-64 mt-4">
+          <span className="bg-gray-300 h-px flex-grow t-2 relative top-2"></span>
+          <span className="flex-none uppercase text-xs text-gray-400 font-semibold">or</span>
+          <span className="bg-gray-300 h-px flex-grow t-2 relative top-2"></span>
         </div>
-    </form>
-    )
+        <button className="mt-4 flex items-center">
+          <FacebookIcon className="mr-1 text-blue-900" />
+          <span className="text-xs text-blue-900 font-semibold">Log in with Facebook</span>
+        </button>
+        <a className="text-xs text-blue-900 mt-4 cursor-pointer">Forgot password?</a>
+      </div>
+      <div className="bg-white border border-gray-300 text-center w-80 py-4">
+        <span className="text-sm">Don't have an account?</span>
+        <a onClick={() => setIsLogInn(!isLogIn)} className="text-blue-500 text-sm font-semibold cursor-pointer">
+          {isLogIn ? 'Log In' : 'Sign Up'}
+        </a>
+      </div>
+      <div className="mt-3 text-center">
+        <span className="text-xs">Get the app</span>
+        <div className="flex mt-3 space-x-2">
+          <div className="bg-no-repeat apple-store-logo"></div>
+          <div className="bg-no-repeat google-store-logo"></div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
-export default Login
+export default Login;

@@ -1,157 +1,126 @@
-// import Nav from "./Nav"
-import { useEffect , useState , useRef} from 'react'
+import React, { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/router';
-// import { getSession, session} from 'next-auth/client'
-// import {useSession } from 'next-auth/client'
 import { db } from "../utils/firebase";
-import { addDoc, collection, doc, getDoc, getDocs, onSnapshot, orderBy, query, serverTimestamp, setDoc, where } from "@firebase/firestore";
-import UserChat from "./UserChat";
+import {
+  addDoc,
+  collection,
+  query,
+  where,
+  serverTimestamp,
+  onSnapshot,
+} from "@firebase/firestore";
 
-import AllMes from "./AllMes";
+const ChatPage = ({ session }) => {
+  const router = useRouter();
+  const { email, receverImg } = router.query;
+  const messageRef = useRef();
+  const [MSender, setMSender] = useState([]);
+  const [MSreceiver, setMSreceiver] = useState([]);
 
+  // Fetch received messages
+  useEffect(() => {
+    if (session) {
+      onSnapshot(
+        query(collection(db, "Users", "messges", session.user.email), where("email", "==", email)),
+        (snapshot) => {
+          const data = snapshot.docs.map((doc) => doc.data());
+          setMSreceiver(data);
+        }
+      );
+    }
+  }, [db, email, session]);
 
-function index({session}) {
-  const [loding , isLoding] = useState(true)
-  const [loddingSession , setisLoddingSession] = useState()
-  const router = useRouter()
-  const {email , receverImg} = router.query
-  // const [session , loging] = useSession()
-  const messageRef = useRef()
-  const [MSender , setMSender] = useState([])
-  const [MSreceiver , setMSreceiver] = useState([])
-  const [All , setAll] = useState([])
+  // Fetch sent messages
+  useEffect(() => {
+    if (session) {
+      onSnapshot(
+        query(collection(db, "Users", "messges", email), where("email", "==", session.user.email)),
+        (snapshot) => {
+          const data = snapshot.docs.map((doc) => doc.data());
+          setMSender(data);
+        }
+      );
+    }
+  }, [db, email, session]);
 
-  // const [TextMessages , setTextMessages]=useState([])
-
-  
-
-
-     useEffect(
-      ()=> 
-        
-        onSnapshot(
-        // query(collection(db , 'Users', session.user.email,'messages'), where("email", "==", email)) ,         
-          query(collection(db , 'Users','messges',session.user.email), where("email", "==", email)) , 
-           (snapshot) =>{
-            const data = snapshot.docs.map(e=>e.data())
-              // const filterd = data.filter(com => com.email === email)
-                setMSreceiver(data)
-              }
-          )
-        
-         ,[db])
-  
-
-         // get all messages
-         useEffect(
-          ()=> onSnapshot(
-              query(collection(db, "Users")) , 
-              (snapshot) =>{
-                setAll(snapshot.docs)
-                console.log(snapshot.docs);
-              }) 
-              ,[db])
-
-
-
-
-  // useEffect(async ()=>{
-  // await getSession().then(session => {
-  //     setisLoddingSession(session)
-
-  //     if(!session){
-  //       router.replace('/')
-  //     } else isLoding(false)
-
-  //   })
-  // },[])
-
-
-
-
-
-
-
-  useEffect(
-    ()=> {onSnapshot(
-        // query(collection(db , 'Users', email,'messages'),orderBy("timeStamp")) , 
-        query(collection(db , 'Users','messges',email), where("email", "==", session.user.email)) , 
-         (snapshot) =>{
-            const data = snapshot.docs.map(e=>e.data())
-              setMSender(data)
-
-            }
-        ) 
-
-      },[db])
-
-
-
-
-  const SendMessage = async (e)=>{
-    console.log(All);
-
+  const sendMessage = async (e) => {
+    e.preventDefault();
     const message = messageRef.current.value;
-    e.preventDefault()
-    await addDoc(collection(db , 'Users','messges',email), 
-    {email:session.user.email,photoUrl:session.user.image,timeStamp:serverTimestamp(),message:message}
-    ); 
+    if (!message.trim()) return;
 
-  }
+    await addDoc(collection(db, "Users", "messges", email), {
+      email: session.user.email,
+      photoUrl: session.user.image,
+      timeStamp: serverTimestamp(),
+      message,
+    });
+    messageRef.current.value = ''; // Clear input after sending
+  };
 
-  if(!loding){ 
-    return <p className='text-5xl text-center'>make combonnent with insta logo</p>
-  }
+  return (
+    <div className="flex h-screen bg-gray-100">
+      <div className="flex-1 bg-white">
+        {/* Header */}
+        <header className="flex items-center justify-between px-6 py-3 border-b bg-gray-50">
+          <span className="text-lg font-bold">Chat with {email}</span>
+          <img
+            src={receverImg || "https://source.unsplash.com/random/50x50"}
+            alt="Profile"
+            className="w-8 h-8 rounded-full"
+          />
+        </header>
 
+        {/* Chat Messages */}
+        <div className="flex flex-col h-full">
+          <div className="overflow-y-auto px-4 py-2 flex-grow">
+            {/* Receiver's Messages */}
+            {MSreceiver.map((msg, index) => (
+              <div key={index} className="flex items-center mb-2">
+                <img
+                  src={msg.photoUrl || "https://source.unsplash.com/random/50x50"}
+                  alt="Receiver"
+                  className="w-8 h-8 rounded-full"
+                />
+                <div className="bg-gray-200 p-2 rounded-lg ml-2">
+                  {msg.message}
+                </div>
+              </div>
+            ))}
 
-    return (
-        <>
-  {/* <Nav /> */}
-    
-  <div className='chat'>
-   <div className='chat-inner'>
+            {/* Sender's Messages */}
+            {MSender.map((msg, index) => (
+              <div key={index} className="flex items-center justify-end mb-2">
+                <div className="bg-blue-500 text-white p-2 rounded-lg mr-2">
+                  {msg.message}
+                </div>
+                <img
+                  src={msg.photoUrl || "https://source.unsplash.com/random/50x50"}
+                  alt="Sender"
+                  className="w-8 h-8 rounded-full"
+                />
+              </div>
+            ))}
+          </div>
 
-    <div className="preview">
-      <div id="user-name">Chat <i className='fas fa-angle-down'></i></div>
-
-      <UserChat  img={receverImg} email={email} message='OnSnapShot' />
-      {/* <UserChat  img={receverImg} email={email} message='OnSnapShot' />
-      <UserChat  img={receverImg} email={email} message='OnSnapShot' />
-      <UserChat  img={receverImg} email={email} message='OnSnapShot' /> */}
-
-
-  </div>
-
-    <div className="chats">
-
-      <div className="chat-banner">
-        <div>
-            <span id="chat-pic"> 
-            <img id="pic" src={receverImg}/>
-          </span>
-          <span>
-            {email}
-          </span>
+          {/* Input Field */}
+          <div className="p-4 border-t flex items-center">
+            <input
+              type="text"
+              placeholder="Type a message..."
+              className="flex-1 border p-2 rounded-full"
+              ref={messageRef}
+            />
+            <button
+              onClick={sendMessage}
+              className="bg-blue-500 text-white px-4 py-2 ml-2 rounded-full"
+            >
+              Send
+            </button>
+          </div>
         </div>
-        <div><i className='fas fa-info'></i></div>
       </div>
-
-       <AllMes MSender={MSender} MSreceiver={MSreceiver}/>
-        
-
-      <div className="user-input"></div>
-
-      <form onSubmit={SendMessage} className="input-msg">
-        <input type="text" ref={messageRef} id="send-input" placeholder="type something"/>
-        <button type='submit' className='hover:cursor-pointer'>Send</button>
-      </form>
-
     </div>
+  );
+};
 
-   </div>
-  </div>
-        </>
-    )
-}
-
-export default index
+export default ChatPage;
